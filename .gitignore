@@ -2,3 +2,7 @@ test-avr.elf
 test-avr.gdb
 test-avr.ihex
 test-avr.o
+test-avr.s.cof
+test-avr.s.eep.hex
+test-avr.s.hex
+test-avr.s.obj

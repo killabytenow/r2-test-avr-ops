@@ -1,10 +1,8 @@
-.equ PORTB,0x18
-.equ DDRB, 0x17
-.equ SREG, 0x3f
+.INCLUDE "/usr/share/avra/m8def.inc"
 
-.org 0x00
+.ORG 0x00
 reset:
-rjmp main;
+rjmp main
 rjmp defaultInt;
 rjmp defaultInt;
 rjmp defaultInt;
@@ -24,11 +22,35 @@ defaultInt:
 	reti
 
 main:
-	#sbi DDRB, 0;
-	#cbi DDRB, 0;
+	; --------------------------------------------------
+	; INIT
+	; --------------------------------------------------
 
+	cli				; Disable interrupts
+
+	; init stack
+	ldi	r16, HIGH(RAMEND) 	; Upper byte
+	out	SPH, r16		; to stack pointer
+	ldi	r16, LOW(RAMEND) 	; Lower byte
+	out	SPL, r16		; to stack pointer
+
+	sei
+
+	; --------------------------------------------------
+	; TESTS
+	; --------------------------------------------------
+
+	rcall   test_ret
+	rcall   test_reti
 	rcall	test_cp
+
 	rjmp end
+
+test_ret:
+	ret
+
+test_reti:
+	reti
 
 test_cp:
 	; 5 == 5
