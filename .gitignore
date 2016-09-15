@@ -1,0 +1,4 @@
+test-avr.elf
+test-avr.gdb
+test-avr.ihex
+test-avr.o
