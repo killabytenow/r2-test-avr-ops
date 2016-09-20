@@ -52,6 +52,7 @@ main:
 	rcall	test_adc
 	rcall	test_bclr
 	rcall	test_cp
+	rcall	test_asr
 
 	rjmp end
 
@@ -123,6 +124,52 @@ test_adc:
 	rcall	check_res
 
 	ret;
+
+; -----------------------------------------------------------------------------
+; ASR
+; -----------------------------------------------------------------------------
+
+test_asr:
+	clr	r25
+	clr	r26
+	clr	r31
+
+	; ==> 0 >> 1
+	ldi	r24, 0
+	ldi	r29, 0x82	; SREG (I)
+	ldi	r30, 0x00	; EXPECTED RESULT
+	asr	r24
+	rcall	check_res
+
+	; ==> 2 >> 1
+	ldi	r24, 2
+	ldi	r29, 0x80	; SREG (I)
+	ldi	r30, 0x01	; EXPECTED RESULT
+	asr	r24
+	rcall	check_res
+
+	; ==> 3 >> 1
+	ldi	r24, 3
+	ldi	r29, 0x99	; SREG (I)
+	ldi	r30, 1		; EXPECTED RESULT
+	asr	r24
+	rcall	check_res
+
+	; ==> 0x80 >> 1
+	ldi	r24, 0x80
+	ldi	r29, 0x8c	; SREG (I)
+	ldi	r30, 0xc0	; EXPECTED RESULT
+	asr	r24
+	rcall	check_res
+
+	; ==> 0x81 >> 1
+	ldi	r24, 0x81
+	ldi	r29, 0x95	; SREG (I)
+	ldi	r30, 0xc0	; EXPECTED RESULT
+	asr	r24
+	rcall	check_res
+
+	ret
 
 ; -----------------------------------------------------------------------------
 ; BCLR
