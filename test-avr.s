@@ -27,7 +27,8 @@ main:
 	; INIT
 	; --------------------------------------------------
 
-	cli				; Disable interrupts
+	; Disable interrupts - THIS CODE HATES INTERRUPTS
+	cli
 
 	; init stack
 	ldi	r16, HIGH(RAMEND) 	; Upper byte
@@ -38,23 +39,51 @@ main:
 	; init r0 risc style
 	clr	r0
 
-	sei
-
 	; --------------------------------------------------
 	; TESTS
 	; --------------------------------------------------
 
-	rcall	test_ret
-.if FLASHEND > 0x0fff
-	call	test_ret
-.endif
-	rcall	test_reti
-	rcall	test_adc
-	rcall	test_bclr
-	rcall	test_cp
-	rcall	test_asr
+;	rcall	test_ret
+;.if FLASHEND > 0x0fff
+;	call	test_ret
+;.endif
+;	rcall	test_reti
+	cli
+;	rcall	test_adc
+;	rcall	test_bclr
+;	rcall	test_cp
+;	rcall	test_asr
+;	rcall	test_bld
+	rcall	test_sbrx
 
 	rjmp end
+
+check_res:
+	; check sreg (flags cf, zf, of, ...)
+	push	r1
+	in	r1, SREG
+	cp	r1, r29
+	pop	r1
+	brne	fail
+
+	; clear SREG
+	out	SREG, r0
+
+	; check result (r25:r24 == r31:r30)
+	cp	r25, r31
+	brne	fail
+	cp	r24, r30
+	brne	fail
+
+	; ok
+	ret
+
+end:
+	rjmp end
+
+fail:
+	break
+	rjmp fail
 
 ; -----------------------------------------------------------------------------
 ; RCALL/CALL/RET
@@ -82,7 +111,7 @@ test_adc:
 	sec
 	ldi	r24, 0
 	ldi	r26, 0
-	ldi	r29, 0x80	; SREG (I)
+	ldi	r29, 0x00	; SREG ()
 	ldi	r30, 0x01	; EXPECTED RESULT
 	adc	r24, r26
 	rcall	check_res
@@ -91,7 +120,7 @@ test_adc:
 	clc
 	ldi	r24, 0
 	ldi	r26, 0
-	ldi	r29, 0x82	; SREG (IZ)
+	ldi	r29, 0x02	; SREG (Z)
 	ldi	r30, 0x00	; EXPECTED RESULT
 	adc	r24, r26
 	rcall	check_res
@@ -100,7 +129,7 @@ test_adc:
 	sec
 	ldi	r24, 100
 	ldi	r26, -1
-	ldi	r29, 0xa1	; SREG (IHC)
+	ldi	r29, 0x21	; SREG (HC)
 	ldi	r30, 100	; EXPECTED RESULT
 	adc	r24, r26
 	rcall	check_res
@@ -109,7 +138,7 @@ test_adc:
 	sec
 	ldi	r24, 0
 	ldi	r26, -1
-	ldi	r29, 0xa1	; SREG (IHC)
+	ldi	r29, 0x21	; SREG (HC)
 	ldi	r30, 0		; EXPECTED RESULT
 	adc	r24, r26
 	rcall	check_res
@@ -118,7 +147,7 @@ test_adc:
 	clc
 	ldi	r24, 0
 	ldi	r26, -1
-	ldi	r29, 0x94	; SREG (INV)
+	ldi	r29, 0x14	; SREG (NV)
 	ldi	r30, -1		; EXPECTED RESULT
 	adc	r24, r26
 	rcall	check_res
@@ -136,35 +165,35 @@ test_asr:
 
 	; ==> 0 >> 1
 	ldi	r24, 0
-	ldi	r29, 0x82	; SREG (I)
+	ldi	r29, 0x02	; SREG (Z)
 	ldi	r30, 0x00	; EXPECTED RESULT
 	asr	r24
 	rcall	check_res
 
 	; ==> 2 >> 1
 	ldi	r24, 2
-	ldi	r29, 0x80	; SREG (I)
+	ldi	r29, 0x00	; SREG ()
 	ldi	r30, 0x01	; EXPECTED RESULT
 	asr	r24
 	rcall	check_res
 
 	; ==> 3 >> 1
 	ldi	r24, 3
-	ldi	r29, 0x99	; SREG (I)
+	ldi	r29, 0x19	; SREG ()
 	ldi	r30, 1		; EXPECTED RESULT
 	asr	r24
 	rcall	check_res
 
 	; ==> 0x80 >> 1
 	ldi	r24, 0x80
-	ldi	r29, 0x8c	; SREG (I)
+	ldi	r29, 0x0c	; SREG ()
 	ldi	r30, 0xc0	; EXPECTED RESULT
 	asr	r24
 	rcall	check_res
 
 	; ==> 0x81 >> 1
 	ldi	r24, 0x81
-	ldi	r29, 0x95	; SREG (I)
+	ldi	r29, 0x15	; SREG ()
 	ldi	r30, 0xc0	; EXPECTED RESULT
 	asr	r24
 	rcall	check_res
@@ -216,7 +245,72 @@ test_bclr:
 	bclr	7
 	rcall	check_res
 
-	sei
+	ret
+
+; -----------------------------------------------------------------------------
+; BLD
+; -----------------------------------------------------------------------------
+
+test_bld:
+	; clear result/expected result registers (r25:24, r31:30)
+	clr	r25
+	clr	r30
+	clr	r31
+
+	; ==> r24.0(0) = T(1)
+	clr	r24
+	ldi	r29, 0x40	; SREG (T)
+	ldi	r30, 0x01	; EXPECTED RESULT
+	out	SREG, r0
+	set
+	bld	r24, 0
+	rcall	check_res
+
+	; ==> r24.0(0) = T(0)
+	clr	r24
+	ldi	r29, 0x00	; SREG ()
+	ldi	r30, 0x00	; EXPECTED RESULT
+	out	SREG, r0
+	clt
+	bld	r24, 0
+	rcall	check_res
+
+	; ==> r24.0(0xff) = T(1)
+	ser	r24
+	ldi	r29, 0x40	; SREG (T)
+	ldi	r30, 0xff	; EXPECTED RESULT
+	out	SREG, r0
+	set
+	bld	r24, 0
+	rcall	check_res
+
+	; ==> r24.0(0xff) = T(0)
+	ser	r24
+	ldi	r29, 0x00	; SREG (T)
+	ldi	r30, 0xfe	; EXPECTED RESULT
+	out	SREG, r0
+	clt
+	bld	r24, 0
+	rcall	check_res
+
+	; ==> r24.3(0) = T(1)
+	clr	r24
+	ldi	r29, 0x40	; SREG (T)
+	ldi	r30, 0x08	; EXPECTED RESULT
+	out	SREG, r0
+	set
+	bld	r24, 3
+	rcall	check_res
+
+	; ==> r24.3(0) = T(0)
+	clr	r24
+	ldi	r29, 0x00	; SREG ()
+	ldi	r30, 0x00	; EXPECTED RESULT
+	out	SREG, r0
+	clt
+	bld	r24, 3
+	rcall	check_res
+
 	ret
 
 ; -----------------------------------------------------------------------------
@@ -246,30 +340,73 @@ test_cp:
 
 	ret
 
-check_res:
-	; check sreg (flags cf, zf, of, ...)
-	push	r1
-	in	r1, SREG
-	cp	r1, r29
-	pop	r1
-	brne	fail
+; -----------------------------------------------------------------------------
+; SBRC/SBRS
+; -----------------------------------------------------------------------------
 
-	; clear SREG
-	out	SREG, r0
-	sei
+test_sbrx:
+	; clear result/expected result registers (r25:24, r31:30)
+	clr	r25
+	clr	r30
+	clr	r31
+	clr	r29
 
-	; check result (r25:r24 == r31:r30)
-	cp	r25, r31
-	brne	fail
-	cp	r24, r30
-	brne	fail
+	; ==> r24.0(0) == 0
+	ldi	r24, 0x00
+	sbrc	r24, 0
+	ldi	r24, 0xff
+	rcall	test_sbrx_check_zero
 
-	; ok
+	; ==> r24.0(1) == 0
+	ldi	r24, 0x01
+	sbrc	r24, 0
+	ldi	r24, 0x00
+	rcall	test_sbrx_check_zero
+
+	; ==> r24.0(1) == 0
+	ldi	r24, 0x01
+	sbrc	r24, 0
+	call	test_sbrx_set_zero
+	rcall	test_sbrx_check_zero
+
+	; ==> r24.4(0xff) != 0
+	ldi	r24, 0xff
+	sbrs	r24, 4
+	ldi	r24, 0x00
+	rcall	test_sbrx_check_no_zero
+
+	; ==> r24.0(1) != 0
+	ldi	r24, 0x08
+	sbrs	r24, 3
+	ldi	r24, 0x00
+	rcall	test_sbrx_check_no_zero
+
+	; ==> r24.0(1) != 0
+	ser	r24
+	sbrs	r24, 0
+	call	test_sbrx_set_zero
+	rcall	test_sbrx_check_no_zero
+
 	ret
 
-end:
-	rjmp end
+test_sbrx_set_zero:
+	clr	r24
+	ret
 
-fail:
-	rjmp fail
+test_sbrx_set_one:
+	ser	r24
+	ret
+
+test_sbrx_check_zero:
+	tst	r24
+	breq	test_sbrx_ok
+	jmp	fail
+
+test_sbrx_check_no_zero:
+	tst	r24
+	brne	test_sbrx_ok
+	jmp	fail
+
+test_sbrx_ok:
+	ret
 
