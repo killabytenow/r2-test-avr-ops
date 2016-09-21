@@ -3,21 +3,21 @@
 
 .ORG 0x00
 reset:
-rjmp main
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
-rjmp defaultInt;
+	rjmp main
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
 
 defaultInt:
 	reti
@@ -43,17 +43,17 @@ main:
 	; TESTS
 	; --------------------------------------------------
 
-;	rcall	test_ret
-;.if FLASHEND > 0x0fff
-;	call	test_ret
-;.endif
-;	rcall	test_reti
+	rcall	test_ret
+.if FLASHEND > 0x0fff
+	call	test_ret
+.endif
+	rcall	test_reti
 	cli
-;	rcall	test_adc
-;	rcall	test_bclr
-;	rcall	test_cp
-;	rcall	test_asr
-;	rcall	test_bld
+	rcall	test_adc
+	rcall	test_bclr
+	rcall	test_cp
+	rcall	test_asr
+	rcall	test_bld
 	rcall	test_sbrx
 
 	rjmp end
