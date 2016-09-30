@@ -3,9 +3,12 @@
 get_symbol_addr()
 {
 	local SYM="$1"
-	grep "^$SYM\>" test-avr.map \
-	| cut -f 4 \
-	| sed 's#^#0x#'
+	ADDR="0x`grep "^$SYM\>" test-avr.map | cut -f 4`"
+	if [ "$ADDR" = "0x" ]; then
+		echo "Symbol '$SYM' does not exist." 1>&2
+		ADDR="0"
+	fi
+	echo $(($ADDR*2))
 }
 
 tag_sym_func()
@@ -35,7 +38,7 @@ aeim 0x00010400 0xffff avr_sram
 # export symbols
 EOF
 tag_sym_func "main"      >> test-avr.r2
-tag_sym_func "end"       >> test-avr.r2
+tag_sym_func "success"   >> test-avr.r2
 tag_sym_func "check_res" >> test-avr.r2
 tag_sym_func "fail"      >> test-avr.r2
 for f in `get_test_symbol_names`; do
