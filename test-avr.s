@@ -1,6 +1,11 @@
 ;.INCLUDE "def/m8def.inc"
 .INCLUDE "def/m32def.inc"
 
+.equ	NONE	= (0)
+.equ	CF	= (1 << SREG_C)
+.equ	ZF	= (1 << SREG_Z)
+.equ	HF	= (1 << SREG_H)
+
 .ORG 0x00
 reset:
 	rjmp main
@@ -67,9 +72,9 @@ main:
 	; HAPPY ENDING!
 	; --------------------------------------------------
 
-end:				; final loop -- execution was succesful!
+success:			; final loop -- execution was succesful!
 	sleep
-	rjmp end
+	rjmp success
 
 ; -----------------------------------------------------------------------------
 ; check_res - checks op result
@@ -128,12 +133,13 @@ test_reti:
 test_adc:
 	clr	r17
 	clr	r31
+	ldi	r28, 0x3f	; check only math flags
 
 	; ==> 0 + 0 + C(1) = 1
 	sec
 	ldi	r16, 0
 	ldi	r26, 0
-	ldi	r29, 0x00	; SREG ()
+	ldi	r29, NONE	; EXPECTED FLAGS
 	ldi	r30, 0x01	; EXPECTED RESULT
 	adc	r16, r26
 	rcall	check_res
@@ -142,7 +148,7 @@ test_adc:
 	clc
 	ldi	r16, 0
 	ldi	r26, 0
-	ldi	r29, 0x02	; SREG (Z)
+	ldi	r29, ZF		; EXPECTED FLAGS
 	ldi	r30, 0x00	; EXPECTED RESULT
 	adc	r16, r26
 	rcall	check_res
@@ -151,7 +157,7 @@ test_adc:
 	sec
 	ldi	r16, 100
 	ldi	r26, -1
-	ldi	r29, 0x21	; SREG (HC)
+	ldi	r29, HF+CF	; SREG (HC)
 	ldi	r30, 100	; EXPECTED RESULT
 	adc	r16, r26
 	rcall	check_res
@@ -182,8 +188,8 @@ test_adc:
 
 test_asr:
 	clr	r17
-	clr	r26
 	clr	r31
+	ldi	r28, 0x3f	; check only math flags
 
 	; ==> 0 >> 1
 	ldi	r16, 0
@@ -227,11 +233,11 @@ test_asr:
 ; -----------------------------------------------------------------------------
 
 test_bclr:
-	; clear result/expected result registers (r17:24, r31:30)
+	; clear result/expected result registers (r17:16, r31:30)
 	clr	r16
 	clr	r17
-	clr	r30
-	clr	r31
+	movw	r31:r30, r17:r16
+	ldi	r28, 0xff	; check only math flags
 
 	ldi	r16, 0xff
 	out	SREG, r16
@@ -274,15 +280,18 @@ test_bclr:
 ; -----------------------------------------------------------------------------
 
 test_bld:
-	; clear result/expected result registers (r17:24, r31:30)
+	; clear result/expected result registers (r17:16, r31:30)
 	clr	r17
 	clr	r30
 	clr	r31
+	; this instruction does not update any flag
+	clr	r28
 
 	; ==> r16.0(0) = T(1)
 	clr	r16
 	ldi	r29, 0x40	; SREG (T)
 	ldi	r30, 0x01	; EXPECTED RESULT
+	clr	r0
 	out	SREG, r0
 	set
 	bld	r16, 0
@@ -367,7 +376,7 @@ test_cp:
 ; -----------------------------------------------------------------------------
 
 test_dec:
-	; clear result/expected result registers (r17:24, r31:30)
+	; clear result/expected result registers (r17:16, r31:30)
 	clr	r17
 	clr	r31
 
@@ -402,7 +411,7 @@ test_dec:
 ; -----------------------------------------------------------------------------
 
 test_mul:
-	; clear result/expected result registers (r17:24, r31:30)
+	; clear result/expected result registers (r17:16, r31:30)
 	clr	r16
 	clr	r17
 	clr	r30
@@ -440,7 +449,7 @@ test_mul:
 ; -----------------------------------------------------------------------------
 
 test_sbrx:
-	; clear result/expected result registers (r17:24, r31:30)
+	; clear result/expected result registers (r17:16, r31:30)
 	clr	r17
 	clr	r30
 	clr	r31

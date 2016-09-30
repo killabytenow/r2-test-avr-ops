@@ -6,3 +6,5 @@ test-avr.s.cof
 test-avr.s.eep.hex
 test-avr.s.hex
 test-avr.s.obj
+test-avr.list
+test-avr.map
