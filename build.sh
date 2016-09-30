@@ -49,10 +49,10 @@ echo "# add code" >> test-avr.r2
 grep "^C:" test-avr.list \
 | while read L; do
 	ADDR="0x`echo "$L" | cut -f 1 | sed -e 's#^C:##' -e 's# .*$##'`"
-	CODE="`echo "$L" | sed 's#^[^\t]*\t##'`"
-	if echo "$CODE" | grep '^[^ ]*\(jmp\|call\)' > /dev/null 2>&1; then
-		echo "CC $CODE @$(($ADDR*2))" | sed 's#\t# #g'
-	fi
+	CODE="`echo "$L" | sed 's#^[^\t]*\t##' | sed 's#;.*$##'`"
+	#if echo "$CODE" | grep '^[^ ]*\(jmp\|call\)' > /dev/null 2>&1; then
+		echo "\"CC $CODE\" @$(($ADDR*2))" | sed 's#\t# #g'
+	#fi
 done >> test-avr.r2
 
 echo "Success"
