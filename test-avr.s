@@ -59,9 +59,9 @@ main:
 	; TESTS
 	; --------------------------------------------------
 
-	rcall	test_adc
-	rcall	test_asr
-	rcall	test_bclr
+	rcall	test_adc	; works!
+	rcall	test_asr	; works!
+	rcall	test_bclr	; works!
 	rcall	test_bld
 	rcall	test_cp
 	rcall	test_dec
@@ -237,40 +237,40 @@ test_bclr:
 	clr	r16
 	clr	r17
 	movw	r31:r30, r17:r16
-	ldi	r28, 0xff	; check only math flags
+	ldi	r28, 0xff	; check all flags
 
-	ldi	r16, 0xff
-	out	SREG, r16
+	ldi	r29, 0xff
+	out	SREG, r29
 	ldi	r29, (0xff & ~0x1)
-	bclr	0
+	bclr	0			; clc
 	rcall	check_res
 	out	SREG, r29
 	ldi	r29, (0xff & ~0x3)
-	bclr	1
+	bclr	1			; clz
 	rcall	check_res
 	out	SREG, r29
 	ldi	r29, (0xff & ~0x7)
-	bclr	2
+	bclr	2			; cln
 	rcall	check_res
 	out	SREG, r29
 	ldi	r29, (0xff & ~0xf)
-	bclr	3
+	bclr	3			; clv
 	rcall	check_res
 	out	SREG, r29
 	ldi	r29, (0xff & ~0x1f)
-	bclr	4
+	bclr	4			; cls
 	rcall	check_res
 	out	SREG, r29
 	ldi	r29, (0xff & ~0x3f)
-	bclr	5
+	bclr	5			; clh
 	rcall	check_res
 	out	SREG, r29
 	ldi	r29, (0xff & ~0x7f)
-	bclr	6
+	bclr	6			; clt
 	rcall	check_res
 	out	SREG, r29
 	ldi	r29, (0xff & ~0xff)
-	bclr	7
+	bclr	7			; cli
 	rcall	check_res
 
 	ret
